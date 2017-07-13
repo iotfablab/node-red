@@ -38,9 +38,12 @@
     <link rel="stylesheet" href="vendor/vendor.css">
 
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="qunit.css" type="text/css"/>
-    <!--start16-->
     <link rel="stylesheet" href="/resources/demos/style.css">
+    <link rel="stylesheet" href="qunit.css" type="text/css"/>
+
+
+
+    <!--start16-->
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.2.9/jsplumb.js"></script>
@@ -54,7 +57,7 @@
 
             var chart = $("#chart");
             var chartOffset = chart.offset();
-            var chartSVG = $("#chart>svg").get(0);
+            //var chartSVG = $("#chart>svg").get(0);
             var activeSpliceLink;
             var mouseX;
             var mouseY;
@@ -67,7 +70,7 @@
         });
         $( function() {
             $( "#palette_node_Csharpweibullalg").draggable({helper:'clone', appendTo: 'body', revert: true,revertDuration: 50,
-                containment:'#main-container'} );
+                containment:'#main-container'});
         } );
         $( function() {
             $( "#palette_node_JSON2doublematrix").draggable({helper:'clone', appendTo: 'body', revert: true,revertDuration: 50,
@@ -76,31 +79,67 @@
 
         $( function() {
             //$("#chart").$('<div>',{class:"palette_node ui-draggable ui-draggable-dragging"}).droppable({
-
+            $("#btn-zoom-out").click(function() {zoomOut();});
+            $("#btn-zoom-zero").click(function() {zoomZero();});
+            $("#btn-zoom-in").click(function() {zoomIn();});
             $("#chart").droppable({
-
+//                var screenSize = [$("#chart").width(),$("#chart").height()],
                 accept: ".palette_node",
-                append:  "svg:path",
+                attr: "id",
+               // append:  "svg:path",
                 drop: function (event, ui) {
 
                     d3.event=event;
                     var se_tl=ui.draggable[0].type;
                     var recipient = addNode(se_tl);
+                    if(!recipient) {
+                        return;
+                    }
+
+                    var space_width = 5000,
+                        space_height = 5000,
+                        lineCurveScale = 0.75,
+                        scaleFactor = 1,
+                        node_width = 100,
+                        node_height = 30;
+                    //
+                    var activesplicelink=null,
+                        lasso = null;
+                    var historyEvent = recipient.historyEvent;
                     var newnd = recipient.node;
+                    var offsethelp = d3.touches(ui.helper.get(0))[0]||d3.mouse(ui.helper.get(0));
+                    var mousePos = d3.touches(this)[0]||d3.mouse(this);
+                    mousePos[1] += this.scrollTop + ((newnd.h/2)-helperOffset[1]);
+                    mousePos[0] += this.scrollLeft + ((newnd.w/2)-helperOffset[0]);
+                    mousePos[1] /= scaleFactor;
+                    mousePos[0] /= scaleFactor;
+                    if (snapGrid) {
+                        mousePos[0] = gridSize*(Math.ceil(mousePos[0]/gridSize));
+                        mousePos[1] = gridSize*(Math.ceil(mousePos[1]/gridSize));
+                    }
+
+                    var ida=( 1+math.random()*4294967295).toString(16);
+                    //node.enter().insert("svg:g").attr("class", "node nodegroup");
+
                     var spliceLink = $(ui.helper).data("splice");
                     nodes.add(newnd);
                     nodeid=getID();
+                   // addNode(se_tl).attr('id','ida');
                     d3.select("body")
-                      .selectAll('div.palette_port.palette_port_output')
+                        .selectAll('div.palette_port.palette_port_output')
                         .enter().append('div.nodeid');
+
+
                 },
-                create:function(event){
-                  id:"chart";
-                },
+                //insert:("svg")
+
+                //create:function(event){
+                 //   id:"chart";
+                //},
 
 
             });
-
+           //("#chart>svg").append('div.palette_node.ui-draggable.ui-draggable').attr('id','y').addClass('draggable');
         });
 
         $(function getID(){
@@ -153,17 +192,193 @@
         //    });
         //})
         $(function(){
-            $( "#palette-header-BIBA" ).on( "click", function(){
+            $( "#palette-header-BIBA" ).on( "click", function(e){
                 $('.palette-content').toggle();
+                var nas= (1+99).toString(16);
+                //$("#palette-header-BIBA"+" i").addClass("expanded" + (1+1).toString(16));
                 $("#palette-header-BIBA"+" i").addClass("expanded");
+                //$('div.palette_node.ui-draggable.ui-draggable').attr('id','y');
+
 //                $("#palette-header-BIBA"+" i").append("svg:path").attr("class","link_outline link_path");
+
 
                 // $('#'+$(this).val()).show();
             })
         });
+        $(function() {
+            var count = 0;
+            $('div.ui-draggable.ui-draggable.ui-draggable').hover(function () {
+                var ida =(1+Math.random()*4294967295).toString(16);
+                    //$('div.ui-draggable.ui-draggable.ui-draggable').attr('id',ida).addClass("node nodeGroup");
+                $('div.ui-draggable.ui-draggable.ui-draggable').attr('id',ida);
 
 
+            });
+        });
 
+        $(function(){
+            var space_width = 5000,
+            space_height = 5000;
+
+            var outer = d3.selectAll('div.ui-draggable.ui-draggable.ui-draggable')
+                          .append("g:g")
+                .attr("width", space_width)
+                .attr("height", space_height)
+                .attr("pointer-events", "all")
+                .style("cursor","crosshair")
+                .attr("transform","translate(3,"+(30+3)+")")
+            ;
+        });
+        $(function(){
+            var space_width = 5000,
+                space_height = 5000;
+
+            var outer = d3.selectAll('div.palette_port.palette_port_output')
+                           .on("mousedown",(function(){var node = d; return function(d,i){portMouseDown(node,0,i);}})() )
+//                .append("rect").attr("class","port").attr("rx",3).attr("ry",3).attr("width",10).attr("height",10)
+            ;
+        });
+        $(
+            function portMouseDown(d,portType,portIndex) {
+                mousedown_node = d;
+                mousedown_port_type = portType;
+                mousedown_port_index = portIndex || 0;
+                if (mouse_mode !== RED.state.QUICK_JOINING) {
+                    mouse_mode = RED.state.JOINING;
+                    document.body.style.cursor = "crosshair";
+                    if (d3.event.ctrlKey || d3.event.metaKey) {
+
+                        mouse_mode = RED.state.QUICK_JOINING;
+
+                        showDragLines([{node:mousedown_node,port:mousedown_port_index,portType:mousedown_port_type}]);
+
+                        $(window).on('keyup',disableQuickJoinEventHandler);
+
+                    }
+                }
+
+                d3.event.stopPropagation();
+
+                d3.event.preventDefault();
+            });
+
+        $(function() {
+
+            d3.selectall("id").mousedown(function () {
+                 insert : "svg:g"
+                //classed("node_selected",function(d) { return d.selected; });
+                //d3.select(this).attr("transform", function(d) { return "translate(" + (d.x-d.w/2) + "," + (d.y-d.h/2) + ")"; });
+
+            });
+        });
+
+
+        $(function zoomIn() {
+            if (scaleFactor < 2) {
+                scaleFactor += 0.1;
+                redraw();
+            }
+        });
+
+        $(function zoomOut() {
+            if (scaleFactor > 0.3) {
+                scaleFactor -= 0.1;
+                redraw();
+            }
+        });
+
+        $(function zoomZero() {
+            scaleFactor = 1;
+            redraw();
+        });
+
+
+        //$(function(){
+            //var outer = d3.select("#chart")
+            //    .append("svg:svg")
+            //    .attr("width", space_width)
+            //    .attr("height", space_height)
+            //    .attr("pointer-events", "all")
+             //   .style("cursor","crosshair")
+             //   .on("mousedown", function() {
+
+             //   });
+           // var vis = outer
+           //     .append("svg:g")
+           //     .on("dblclick.zoom", null)
+            //    .append("svg:g");
+            //var outer_background = vis.append("svg:rect")
+            //    .attr("width", space_width)
+            //    .attr("height", space_height)
+            //    .attr("fill","#fff");
+            //var scaleFactor = 1;
+            //var mousedown_node=null;
+            //var d_x=40,
+            //    d_y=40;
+            //var gridSize = 20;
+            //var node_width = 100,
+           //     node_height = 30;
+           // var ow = d.w;
+            //d.w = Math.max(node_width,gridSize*(Math.ceil((calculateTextWidth(l, "palatte_label", 50)+(d._def.inputs>0?7:0))/gridSize)) );
+            //d.h = Math.max(node_height,(d.outputs||0) * 15);
+            //d.x += (d.w-ow)/2;
+            //d.resize = false;
+
+            //var space_width=5000,
+            //    space_height=5000;
+          // $(' div.ui-draggable.ui-draggable.ui-draggable').mousedown(function () {
+             //   //$('div.ui-draggable.ui-draggable.ui-draggable').attr("transform","translate("+(d.x-20)+","+(d.x-20)+")").attr("width", space_width)
+             //  $('div.ui-draggable.ui-draggable.ui-draggable').append("svg:svg").attr("transform","scale("+20+","+20+")").attr("width", space_width)
+             //       .attr("height", space_height)
+             //       .attr("pointer-events", "all")
+             //       .style("cursor","crosshair");
+             //  vis.append("svg:rect").addClass("node node_selected");
+           //});
+
+       // });
+       $(function calculateTextWidth(str, className, offset) {
+            var sp = document.createElement("span");
+            sp.className = className;
+            sp.style.position = "absolute";
+            sp.style.top = "-1000px";
+            sp.textContent = (str||"");
+            document.body.appendChild(sp);
+            var w = sp.offsetWidth;
+            document.body.removeChild(sp);
+            return offset+w;
+        })
+
+        $(function(){
+            var canvas = new fabric.Canvas('c', { selection: false });
+
+            var line, isDown;
+
+            canvas.on('mouse:down', function(o){
+                isDown = true;
+                var pointer = canvas.getPointer(o.e);
+               // var pointer = d3.select('div.palette_port.palette_port_output').getPosition(o.e);
+                var points = [ pointer.x, pointer.y, pointer.x, pointer.y ];
+                line = new fabric.Line(points, {
+                    strokeWidth: 5,
+                    fill: 'red',
+                    stroke: 'red',
+                    originX: 'center',
+                    originY: 'center'
+                });
+                canvas.add(line);
+            });
+
+            canvas.on('mouse:move', function(o){
+                if (!isDown) return;
+                var pointer = canvas.getPointer(o.e);
+                line.set({ x2: pointer.x, y2: pointer.y });
+                canvas.renderAll();
+            });
+
+            canvas.on('mouse:up', function(o){
+                isDown = false;
+            });
+        })
 
     </script>
 
@@ -225,7 +440,9 @@
             <div class="red-ui-tab-button red-ui-tab-scroll red-ui-tab-scroll-left"><a href="#" style=""><i class="fa fa-caret-left"></i></a></div>
             <div class="red-ui-tab-button red-ui-tab-scroll red-ui-tab-scroll-right"><a href="#" style="display: block;"><i class="fa fa-caret-right"></i></a></div>
         </div>
-        <div id="chart" tabindex="1" class="ui-droppable" style="margin-top: 0px;">
+        <!--<div id="chart" tabindex="1" class="ui-droppable" style="cursor: crosshair;">-->
+        <div id="chart" tabindex="1" class="ui-droppable" style="...">
+            <canvas id="c" width="5000" height="5000" style="..."></canvas>
             <svg width="5000" height="5000" pointer-events="all" style="cursor: crosshair;">
                 <g><g transform="scale(1)"><rect width="5000" height="5000" fill="#fff"></rect>
                     <g style="visibility: hidden;"><line class="horizontal" x1="0" x2="5000" y1="0" y2="0" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
@@ -630,7 +847,8 @@
                     <div id="palette-BIBA-output"></div>
                     <div id="palette-BIBA-function"></div>
                     <div id="palette-BIBA">
-                        <div id="palette_node_CSharplib" class="palette_node ui-draggable" style="background-color: rgb(255, 204, 102); height: 28px;">
+                        <div id="palette_node_CSharplib" class="palette_node ui-state-highlight" style="...">
+                        <!--<div id="palette_node_CSharplib" class="palette_node ui-draggable" style="...">-->
                             <!--start 19-6-17-->
 
                             <!--end 19-6-17-->
@@ -645,7 +863,7 @@
                             <!--end-->
 
                         </div>
-                        <div id="palette_node_Csharpweibullalg" class="palette_node ui-draggable" style="background-color: rgb(255, 170, 170); height: 28px;">
+                        <div id="palette_node_Csharpweibullalg" class="palette_node ui-state-highlight" style="background-color: rgb(255, 170, 170); height: 28px;">
                             <div class="palette_label" dir="">Csharpweibullalg</div>
                             <div class="palette_icon_container">
                                 <div class="palette_icon" style="background-image: url(pub/icons/inject.png)"></div>
@@ -653,7 +871,7 @@
                             <div class="palette_port palette_port_output" style="top: 9px;"></div>
                             <div class="palette_port palette_port_input" style="top: 9px;"></div>
                         </div>
-                        <div id="palette_node_JSON2doublematrix" class="palette_node ui-draggable" style="background-color: rgb(255, 170, 170); height: 28px;">
+                        <div id="palette_node_JSON2doublematrix" class="palette_node ui-state-highlight" style="background-color: rgb(255, 170, 170); height: 28px;">
                             <div class="palette_label" dir="">JSON2doublematrix</div>
                             <div class="palette_icon_container">
                                 <div class="palette_icon" style="background-image: url(pub/icons/inject.png)"></div>
@@ -704,60 +922,60 @@
                                 <li class="config_node_none" data-i18n="sidebar.config.none">none</li></ul></div>
 
 
-                    <div><div class="palette-category workspace-config-node-category" id="workspace-config-node-category-235d4cfa-474cac"><div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down"></i><span class="config-node-label">Subflow 1</span><span class="config-node-filter-info" style="display: none;"></span></div><ul class="palette-content config-node-list" style="display: none;"><li class="config_node_none" data-i18n="sidebar.config.none">none</li></ul></div>
+                        <div><div class="palette-category workspace-config-node-category" id="workspace-config-node-category-235d4cfa-474cac"><div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down"></i><span class="config-node-label">Subflow 1</span><span class="config-node-filter-info" style="display: none;"></span></div><ul class="palette-content config-node-list" style="display: none;"><li class="config_node_none" data-i18n="sidebar.config.none">none</li></ul></div>
 
-                        <div class="palette-category workspace-config-node-category" id="workspace-config-node-category-d89575db-92fc48">
-                            <div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down"></i><span class="config-node-label">CSharplib2</span><span class="config-node-filter-info" style="display: none;"></span></div><ul class="palette-content config-node-list" style="display: none;"><li class="config_node_none" data-i18n="sidebar.config.none">none</li></ul></div></div></div><div class="sidebar-shade hide"></div></div><div style="height: 100%; display: none;"><div style="position: relative; height: 100%;"><div class="sidebar-header"><span class="button-group"><a id="debug-tab-filter" class="sidebar-header-button" href="#"><i class="fa fa-filter"></i></a></span><span class="button-group"><a id="debug-tab-clear" title="clear log" class="sidebar-header-button" href="#"><i class="fa fa-trash"></i></a></span></div><div class="debug-content debug-content-list"></div><div class="debug-content  debug-content-table hide"></div><div class="debug-filter-box hide"><div class="debug-filter-row"><span class="button-group"><a class="sidebar-header-button-toggle selected" id="debug-tab-filter-all" href="#"><span data-i18n="node-red:debug.sidebar.filterAll">all flows</span></a><a class="sidebar-header-button-toggle" id="debug-tab-filter-current" href="#"><span data-i18n="node-red:debug.sidebar.filterCurrent">current flow</span></a> </span></div></div></div></div></div>
-        <div id="sidebar-footer"><div style="display: none;"><a class="sidebar-footer-button" id="workspace-config-node-collapse-all" href="#"><i class="fa fa-angle-double-up"></i></a> <a class="sidebar-footer-button" id="workspace-config-node-expand-all" href="#"><i class="fa fa-angle-double-down"></i></a></div><div style="display: none;"><span class="button-group"><a id="debug-tab-open" title="open in new window" class="sidebar-footer-button" href="#"><i class="fa fa-desktop"></i></a></span> </div></div>
-        <div id="sidebar-shade" class="hide" style="display: none;"></div>
-    </div>
+                            <div class="palette-category workspace-config-node-category" id="workspace-config-node-category-d89575db-92fc48">
+                                <div class="workspace-config-node-tray-header palette-header"><i class="fa fa-angle-down"></i><span class="config-node-label">CSharplib2</span><span class="config-node-filter-info" style="display: none;"></span></div><ul class="palette-content config-node-list" style="display: none;"><li class="config_node_none" data-i18n="sidebar.config.none">none</li></ul></div></div></div><div class="sidebar-shade hide"></div></div><div style="height: 100%; display: none;"><div style="position: relative; height: 100%;"><div class="sidebar-header"><span class="button-group"><a id="debug-tab-filter" class="sidebar-header-button" href="#"><i class="fa fa-filter"></i></a></span><span class="button-group"><a id="debug-tab-clear" title="clear log" class="sidebar-header-button" href="#"><i class="fa fa-trash"></i></a></span></div><div class="debug-content debug-content-list"></div><div class="debug-content  debug-content-table hide"></div><div class="debug-filter-box hide"><div class="debug-filter-row"><span class="button-group"><a class="sidebar-header-button-toggle selected" id="debug-tab-filter-all" href="#"><span data-i18n="node-red:debug.sidebar.filterAll">all flows</span></a><a class="sidebar-header-button-toggle" id="debug-tab-filter-current" href="#"><span data-i18n="node-red:debug.sidebar.filterCurrent">current flow</span></a> </span></div></div></div></div></div>
+            <div id="sidebar-footer"><div style="display: none;"><a class="sidebar-footer-button" id="workspace-config-node-collapse-all" href="#"><i class="fa fa-angle-double-up"></i></a> <a class="sidebar-footer-button" id="workspace-config-node-expand-all" href="#"><i class="fa fa-angle-double-down"></i></a></div><div style="display: none;"><span class="button-group"><a id="debug-tab-open" title="open in new window" class="sidebar-footer-button" href="#"><i class="fa fa-desktop"></i></a></span> </div></div>
+            <div id="sidebar-shade" class="hide" style="display: none;"></div>
+        </div>
 
-    <div id="sidebar-separator" class="ui-draggable" style="display: block;"></div>
-    <div id="notifications"></div>
-    <!--start 21-06-17-->
-    <div id="dropTarget"><div data-i18n="[append]workspace.dropFlowHere"><br><i class="fa fa-download"></i>Drop the flow here</div></div>
-    <div id="node-dialog-library-save-confirm" class="hide">
-        <form class="form-horizontal">
-            <div style="text-align: center; padding-top: 30px;" id="node-dialog-library-save-content">
-            </div>
-        </form>
-    </div>
-    <div id="node-dialog-library-save" class="hide">
-        <form class="form-horizontal">
-            <div class="form-row">
-                <label for="node-dialog-library-save-folder" data-i18n="[append]library.folder"><i class="fa fa-folder-open"></i> Folder</label>
-                <input type="text" id="node-dialog-library-save-folder" data-i18n="[placeholder]library.folderPlaceholder" placeholder="a/b">
-            </div>
-            <div class="form-row">
-                <label for="node-dialog-library-save-filename" data-i18n="[append]library.filename"><i class="fa fa-file"></i> Filename</label>
-                <input type="text" id="node-dialog-library-save-filename" data-i18n="[placeholder]library.filenamePlaceholder" placeholder="file">
-            </div>
-        </form>
-    </div>
-    <div id="node-dialog-library-lookup" class="hide">
-        <form class="form-horizontal">
-            <div class="form-row">
-                <ul id="node-dialog-library-breadcrumbs" class="breadcrumb">
-                    <li class="active"><a href="#" data-i18n="[append]library.breadcrumb">Library</a></li>
-                </ul>
-            </div>
-            <div class="form-row">
-                <div style="vertical-align: top; display: inline-block; height: 100%; width: 30%; padding-right: 20px;">
-                    <div id="node-select-library" style="border: 1px solid #999; width: 100%; height: 100%; overflow:scroll;"><ul></ul></div>
+        <div id="sidebar-separator" class="ui-draggable" style="display: block;"></div>
+        <div id="notifications"></div>
+        <!--start 21-06-17-->
+        <div id="dropTarget"><div data-i18n="[append]workspace.dropFlowHere"><br><i class="fa fa-download"></i>Drop the flow here</div></div>
+        <div id="node-dialog-library-save-confirm" class="hide">
+            <form class="form-horizontal">
+                <div style="text-align: center; padding-top: 30px;" id="node-dialog-library-save-content">
                 </div>
-                <div style="vertical-align: top; display: inline-block;width: 65%; height: 100%;">
-                    <div style="height: 100%; width: 95%;" class="node-text-editor" id="node-select-library-text"></div>
+            </form>
+        </div>
+        <div id="node-dialog-library-save" class="hide">
+            <form class="form-horizontal">
+                <div class="form-row">
+                    <label for="node-dialog-library-save-folder" data-i18n="[append]library.folder"><i class="fa fa-folder-open"></i> Folder</label>
+                    <input type="text" id="node-dialog-library-save-folder" data-i18n="[placeholder]library.folderPlaceholder" placeholder="a/b">
                 </div>
-            </div>
-        </form>
-    </div>
-    <script type="text/x-red" data-template-name="subflow">
+                <div class="form-row">
+                    <label for="node-dialog-library-save-filename" data-i18n="[append]library.filename"><i class="fa fa-file"></i> Filename</label>
+                    <input type="text" id="node-dialog-library-save-filename" data-i18n="[placeholder]library.filenamePlaceholder" placeholder="file">
+                </div>
+            </form>
+        </div>
+        <div id="node-dialog-library-lookup" class="hide">
+            <form class="form-horizontal">
+                <div class="form-row">
+                    <ul id="node-dialog-library-breadcrumbs" class="breadcrumb">
+                        <li class="active"><a href="#" data-i18n="[append]library.breadcrumb">Library</a></li>
+                    </ul>
+                </div>
+                <div class="form-row">
+                    <div style="vertical-align: top; display: inline-block; height: 100%; width: 30%; padding-right: 20px;">
+                        <div id="node-select-library" style="border: 1px solid #999; width: 100%; height: 100%; overflow:scroll;"><ul></ul></div>
+                    </div>
+                    <div style="vertical-align: top; display: inline-block;width: 65%; height: 100%;">
+                        <div style="height: 100%; width: 95%;" class="node-text-editor" id="node-select-library-text"></div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <script type="text/x-red" data-template-name="subflow">
     <div class="form-row">
         <label for="node-input-name" data-i18n="[append]editor:common.label.name"><i class="fa fa-tag"></i> </label>
         <input type="text" id="node-input-name">
     </div>
 </script>
-    <script type="text/x-red" data-template-name="subflow-template">
+        <script type="text/x-red" data-template-name="subflow-template">
     <div class="form-row">
         <i class="fa fa-tag"></i>
         <label for="subflow-input-name" data-i18n="common.label.name"></label><input type="text" id="subflow-input-name">
@@ -771,7 +989,7 @@
     </div>
     <div class="form-row form-tips" id="subflow-dialog-user-count"></div>
 </script>
-    <script type="text/x-red" data-template-name="_expression">
+        <script type="text/x-red" data-template-name="_expression">
     <div class="form-row node-text-editor-row">
         <div style="height: 200px;min-height: 150px;" class="node-text-editor" id="node-input-expression"></div>
     </div>
@@ -782,224 +1000,224 @@
         <div style="min-height: 200px;" id="node-input-expression-help"></div>
     </div>
 </script>
-    <script src="vendor/vendor.js"></script>
-    <script src="vendor/jsonata/jsonata.min.js"></script>
-    <script src="vendor/ace/ace.js"></script>
-    <script src="vendor/ace/ext-language_tools.js"></script>
-    <script src="public/red/red.min.js"></script>
-    <script src="public/red/main.min.js"></script>
+        <script src="vendor/vendor.js"></script>
+        <script src="vendor/jsonata/jsonata.min.js"></script>
+        <script src="vendor/ace/ace.js"></script>
+        <script src="vendor/ace/ext-language_tools.js"></script>
+        <script src="public/red/red.min.js"></script>
+        <script src="public/red/main.min.js"></script>
 
-    <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="palette-module-install-confirm" aria-labelledby="ui-id-1" style="display: none; position: absolute;">
-        <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix">
-            <span id="ui-id-1" class="ui-dialog-title">palette.editor.confirm.title</span>
-            <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close">
-                <span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
-                <span class="ui-button-text">close</span></button></div>
-        <div id="palette-module-install-confirm" class="hide ui-dialog-content ui-widget-content" style="display: block;"><form class="form-horizontal">
-            <div id="palette-module-install-confirm-body" class="node-dialog-confirm-row"></div></form></div>
-        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix"><div class="ui-dialog-buttonset">
-            <button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                <span class="ui-button-text">Cancel</span></button>
-            <button type="button" class="primary palette-module-install-confirm-button-install ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                <span class="ui-button-text">Open node information</span></button>
-            <button type="button" class="primary palette-module-install-confirm-button-install ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Install</span></button>
-            <button type="button" class="primary palette-module-install-confirm-button-remove ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Remove</span></button></div></div>
-        <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div>
-    <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable" tabindex="-1" role="dialog" aria-describedby="clipboard-dialog" aria-labelledby="ui-id-3" style="display: none;">
-        <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-3" class="ui-dialog-title">&nbsp;</span>
-            <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
-                <span class="ui-button-text">close</span></button></div>
-        <div id="clipboard-dialog" class="hide node-red-dialog ui-dialog-content ui-widget-content" style="display: block;">
-            <form class="dialog-form form-horizontal"></form></div>
-        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
-            <div class="ui-dialog-buttonset">
-                <button type="button" id="clipboard-dialog-cancel" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Cancel</span></button>
-                <button type="button" id="clipboard-dialog-close" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Close</span></button>
-                <button type="button" id="clipboard-dialog-copy" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Export to clipboard</span></button>
-                <button type="button" id="clipboard-dialog-ok" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Import</span></button></div></div></div>
-    <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="node-dialog-view-diff" aria-labelledby="ui-id-4" style="display: none; position: absolute;">
-        <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-4" class="ui-dialog-title">Review differences</span>
-            <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close">
-                <span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
-                <span class="ui-button-text">close</span></button></div>
-        <div id="node-dialog-view-diff" class="hide ui-dialog-content ui-widget-content" style="display: block;">
-            <div class="node-diff-toolbar">
-                <span><span id="node-diff-toolbar-resolved-conflicts"></span></span> </div>
-            <div id="node-dialog-view-diff-headers"></div>
-            <div class="red-ui-editableList" style="top: 80px; left: 10px; bottom: 10px; right: 10px; position: absolute;">
-                <div class="red-ui-editableList-container" style="top: 0px; left: 0px; bottom: 0px; right: 0px; position: absolute; overflow-y: scroll;">
-                    <ol id="node-dialog-view-diff-diff" class="red-ui-editableList-list" style="top: auto; left: auto; bottom: auto; right: auto; position: static; height: auto;"></ol></div></div></div>
-        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
-            <div class="ui-dialog-buttonset"><button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                <span class="ui-button-text">Cancel</span></button>
-                <button type="button" id="node-diff-view-diff-merge" class="primary disabled ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Merge changes</span></button></div></div>
-        <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div>
-    <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="node-dialog-confirm-deploy" aria-labelledby="ui-id-5" style="display: none; position: absolute;">
-        <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-5" class="ui-dialog-title">Confirm deploy</span>
-            <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span class="ui-button-text">close</span></button></div>
-        <div id="node-dialog-confirm-deploy" class="hide ui-dialog-content ui-widget-content" style="display: block;">
-            <form class="form-horizontal">
-                <div id="node-dialog-confirm-deploy-config" class="node-dialog-confirm-row" data-i18n="[prepend]deploy.confirm.improperlyConfigured;[append]deploy.confirm.confirm">The workspace contains some nodes that are not properly configured:
-                    <ul id="node-dialog-confirm-deploy-invalid-list"></ul>
-                    Are you sure you want to deploy?</div>
-                <div id="node-dialog-confirm-deploy-unknown" class="node-dialog-confirm-row" data-i18n="[prepend]deploy.confirm.unknown;[append]deploy.confirm.confirm">The workspace contains some unknown node types:
-                    <ul id="node-dialog-confirm-deploy-unknown-list"></ul>
-                    Are you sure you want to deploy?</div>
-                <div id="node-dialog-confirm-deploy-conflict" class="node-dialog-confirm-row">
-                    <div style="margin-left: 40px; margin-bottom: 10px;">
-                        <span data-i18n="deploy.confirm.conflict">The server is running a more recent set of flows.</span>
-                    </div>
-                    <div id="node-dialog-confirm-deploy-conflict-checking" class="node-dialog-confirm-conflict-row">
-                        <img src="red/images/spin.svg"><div data-i18n="deploy.confirm.conflictChecking">Checking to see if the changes can be merged automatically</div>
-                    </div>
-                    <div id="node-dialog-confirm-deploy-conflict-auto-merge" class="node-dialog-confirm-conflict-row">
-                        <i style="color: #3a3;" class="fa fa-check"></i><div data-i18n="deploy.confirm.conflictAutoMerge">The changes include no conflicts and can be merged automatically.</div>
-                    </div>
-                    <div id="node-dialog-confirm-deploy-conflict-manual-merge" class="node-dialog-confirm-conflict-row">
-                        <i style="color: #999;" class="fa fa-exclamation"></i><div data-i18n="deploy.confirm.conflictManualMerge">The changes include conflicts that must be resolved before they can be deployed.</div>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
-            <div style="height:0; vertical-align: middle; display:inline-block; margin-top: 13px; float:left;">
-                <input style="vertical-align:top;" type="checkbox" id="node-dialog-confirm-deploy-hide">
-                <label style="display:inline;" for="node-dialog-confirm-deploy-hide"> do not warn about this again</label>
-                <input type="hidden" id="node-dialog-confirm-deploy-type"></div>
-            <div class="ui-dialog-buttonset">
+        <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="palette-module-install-confirm" aria-labelledby="ui-id-1" style="display: none; position: absolute;">
+            <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix">
+                <span id="ui-id-1" class="ui-dialog-title">palette.editor.confirm.title</span>
+                <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close">
+                    <span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
+                    <span class="ui-button-text">close</span></button></div>
+            <div id="palette-module-install-confirm" class="hide ui-dialog-content ui-widget-content" style="display: block;"><form class="form-horizontal">
+                <div id="palette-module-install-confirm-body" class="node-dialog-confirm-row"></div></form></div>
+            <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix"><div class="ui-dialog-buttonset">
                 <button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
                     <span class="ui-button-text">Cancel</span></button>
-                <button type="button" id="node-dialog-confirm-deploy-review" class="primary disabled ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Review differences</span></button>
-                <button type="button" id="node-dialog-confirm-deploy-merge" class="primary disabled ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Merge changes</span></button>
-                <button type="button" id="node-dialog-confirm-deploy-deploy" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                    <span class="ui-button-text">Confirm deploy</span></button></div></div>
-        <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
-        <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div>
-    <script type="text/javascript">
-        RED.nodes.registerType('Csharplib',{
-            category: 'BIBA',
-            color: '#FFCC66',
-            defaults: {
-                name: {value:""},
-                version:{value:"0.0.1"}
-            },
-            inputs:0,
-            outputs:1,
-            icon: "debug.png",
-            label: function() {
-                return this.name||"Csharplib";;
-            }
-        });
-    </script>
-    <script type="text/x-red" data-template-name="Csharplib">
+                <button type="button" class="primary palette-module-install-confirm-button-install ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                    <span class="ui-button-text">Open node information</span></button>
+                <button type="button" class="primary palette-module-install-confirm-button-install ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Install</span></button>
+                <button type="button" class="primary palette-module-install-confirm-button-remove ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Remove</span></button></div></div>
+            <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div>
+        <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable" tabindex="-1" role="dialog" aria-describedby="clipboard-dialog" aria-labelledby="ui-id-3" style="display: none;">
+            <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-3" class="ui-dialog-title">&nbsp;</span>
+                <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
+                    <span class="ui-button-text">close</span></button></div>
+            <div id="clipboard-dialog" class="hide node-red-dialog ui-dialog-content ui-widget-content" style="display: block;">
+                <form class="dialog-form form-horizontal"></form></div>
+            <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+                <div class="ui-dialog-buttonset">
+                    <button type="button" id="clipboard-dialog-cancel" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Cancel</span></button>
+                    <button type="button" id="clipboard-dialog-close" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Close</span></button>
+                    <button type="button" id="clipboard-dialog-copy" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Export to clipboard</span></button>
+                    <button type="button" id="clipboard-dialog-ok" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Import</span></button></div></div></div>
+        <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="node-dialog-view-diff" aria-labelledby="ui-id-4" style="display: none; position: absolute;">
+            <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-4" class="ui-dialog-title">Review differences</span>
+                <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close">
+                    <span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
+                    <span class="ui-button-text">close</span></button></div>
+            <div id="node-dialog-view-diff" class="hide ui-dialog-content ui-widget-content" style="display: block;">
+                <div class="node-diff-toolbar">
+                    <span><span id="node-diff-toolbar-resolved-conflicts"></span></span> </div>
+                <div id="node-dialog-view-diff-headers"></div>
+                <div class="red-ui-editableList" style="top: 80px; left: 10px; bottom: 10px; right: 10px; position: absolute;">
+                    <div class="red-ui-editableList-container" style="top: 0px; left: 0px; bottom: 0px; right: 0px; position: absolute; overflow-y: scroll;">
+                        <ol id="node-dialog-view-diff-diff" class="red-ui-editableList-list" style="top: auto; left: auto; bottom: auto; right: auto; position: static; height: auto;"></ol></div></div></div>
+            <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+                <div class="ui-dialog-buttonset"><button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                    <span class="ui-button-text">Cancel</span></button>
+                    <button type="button" id="node-diff-view-diff-merge" class="primary disabled ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Merge changes</span></button></div></div>
+            <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div>
+        <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable ui-resizable" tabindex="-1" role="dialog" aria-describedby="node-dialog-confirm-deploy" aria-labelledby="ui-id-5" style="display: none; position: absolute;">
+            <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-5" class="ui-dialog-title">Confirm deploy</span>
+                <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span><span class="ui-button-text">close</span></button></div>
+            <div id="node-dialog-confirm-deploy" class="hide ui-dialog-content ui-widget-content" style="display: block;">
+                <form class="form-horizontal">
+                    <div id="node-dialog-confirm-deploy-config" class="node-dialog-confirm-row" data-i18n="[prepend]deploy.confirm.improperlyConfigured;[append]deploy.confirm.confirm">The workspace contains some nodes that are not properly configured:
+                        <ul id="node-dialog-confirm-deploy-invalid-list"></ul>
+                        Are you sure you want to deploy?</div>
+                    <div id="node-dialog-confirm-deploy-unknown" class="node-dialog-confirm-row" data-i18n="[prepend]deploy.confirm.unknown;[append]deploy.confirm.confirm">The workspace contains some unknown node types:
+                        <ul id="node-dialog-confirm-deploy-unknown-list"></ul>
+                        Are you sure you want to deploy?</div>
+                    <div id="node-dialog-confirm-deploy-conflict" class="node-dialog-confirm-row">
+                        <div style="margin-left: 40px; margin-bottom: 10px;">
+                            <span data-i18n="deploy.confirm.conflict">The server is running a more recent set of flows.</span>
+                        </div>
+                        <div id="node-dialog-confirm-deploy-conflict-checking" class="node-dialog-confirm-conflict-row">
+                            <img src="red/images/spin.svg"><div data-i18n="deploy.confirm.conflictChecking">Checking to see if the changes can be merged automatically</div>
+                        </div>
+                        <div id="node-dialog-confirm-deploy-conflict-auto-merge" class="node-dialog-confirm-conflict-row">
+                            <i style="color: #3a3;" class="fa fa-check"></i><div data-i18n="deploy.confirm.conflictAutoMerge">The changes include no conflicts and can be merged automatically.</div>
+                        </div>
+                        <div id="node-dialog-confirm-deploy-conflict-manual-merge" class="node-dialog-confirm-conflict-row">
+                            <i style="color: #999;" class="fa fa-exclamation"></i><div data-i18n="deploy.confirm.conflictManualMerge">The changes include conflicts that must be resolved before they can be deployed.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+                <div style="height:0; vertical-align: middle; display:inline-block; margin-top: 13px; float:left;">
+                    <input style="vertical-align:top;" type="checkbox" id="node-dialog-confirm-deploy-hide">
+                    <label style="display:inline;" for="node-dialog-confirm-deploy-hide"> do not warn about this again</label>
+                    <input type="hidden" id="node-dialog-confirm-deploy-type"></div>
+                <div class="ui-dialog-buttonset">
+                    <button type="button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Cancel</span></button>
+                    <button type="button" id="node-dialog-confirm-deploy-review" class="primary disabled ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Review differences</span></button>
+                    <button type="button" id="node-dialog-confirm-deploy-merge" class="primary disabled ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Merge changes</span></button>
+                    <button type="button" id="node-dialog-confirm-deploy-deploy" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                        <span class="ui-button-text">Confirm deploy</span></button></div></div>
+            <div class="ui-resizable-handle ui-resizable-n" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-e" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-s" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-w" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-sw" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-ne" style="z-index: 90;"></div>
+            <div class="ui-resizable-handle ui-resizable-nw" style="z-index: 90;"></div></div>
+        <script type="text/javascript">
+            RED.nodes.registerType('Csharplib',{
+                category: 'BIBA',
+                color: '#FFCC66',
+                defaults: {
+                    name: {value:""},
+                    version:{value:"0.0.1"}
+                },
+                inputs:0,
+                outputs:1,
+                icon: "debug.png",
+                label: function() {
+                    return this.name||"Csharplib";;
+                }
+            });
+        </script>
+        <script type="text/x-red" data-template-name="Csharplib">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
 </script>
-    <script type="text/x-red" data-help-name="Csharplib">
+        <script type="text/x-red" data-help-name="Csharplib">
     <p>This node is used to capture the data using the Input url and create a json string as its output </p>
 </script>
-    <script type="text/javascript">
-        RED.nodes.registerType('Csharpweibullalg',{
-            category: 'BIBA',
-            color: '#FFAAAA',
-            defaults: {
-                name: {value:""},
-                version:{value:"0.0.1"}
-            },
-            inputs:1,
-            outputs:1,
-            icon: "inject.png",
-            label: function() {
-                return this.name||"Csharpweibullalg";
-            }
-        });
-    </script>
-    <script type="text/x-red" data-template-name="Csharpweibullalg">
+        <script type="text/javascript">
+            RED.nodes.registerType('Csharpweibullalg',{
+                category: 'BIBA',
+                color: '#FFAAAA',
+                defaults: {
+                    name: {value:""},
+                    version:{value:"0.0.1"}
+                },
+                inputs:1,
+                outputs:1,
+                icon: "inject.png",
+                label: function() {
+                    return this.name||"Csharpweibullalg";
+                }
+            });
+        </script>
+        <script type="text/x-red" data-template-name="Csharpweibullalg">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
 </script>
-    <script type="text/x-red" data-help-name="Csharpweibullalg">
+        <script type="text/x-red" data-help-name="Csharpweibullalg">
     <p>The function of this node is to compute the weibull distribution parameters for the matrix of input type double from Json2doublematrix .</p>
 </script>
-    <script type="text/javascript">
-        RED.nodes.registerType('JSON2doublematrix',{
-            category: 'BIBA',
-            color: '#FFAAAA',
-            defaults: {
-                name: {value:""}
-            },
-            inputs:1,
-            outputs:1,
-            icon: "inject.png",
-            label: function() {
-                return this.name||"JSON2doublematrix";
-            }
-        });
-    </script>
-    <script type="text/x-red" data-template-name="JSON2doublematrix">
+        <script type="text/javascript">
+            RED.nodes.registerType('JSON2doublematrix',{
+                category: 'BIBA',
+                color: '#FFAAAA',
+                defaults: {
+                    name: {value:""}
+                },
+                inputs:1,
+                outputs:1,
+                icon: "inject.png",
+                label: function() {
+                    return this.name||"JSON2doublematrix";
+                }
+            });
+        </script>
+        <script type="text/x-red" data-template-name="JSON2doublematrix">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
 </script>
-    <script type="text/x-red" data-help-name="JSON2doublematrix">
+        <script type="text/x-red" data-help-name="JSON2doublematrix">
     <p>The function of this node is to convert the JSON to a matrix of data type double.</p>
 </script>
-    <!--end 21-06-17-->
-    <div id="red-ui-search" class="red-ui-search" style="display: none;"><div class="red-ui-search-container"><div class="red-ui-searchBox-container"><i class="fa fa-search"></i><input type="text" placeholder="search your flows"><a href="#" style="display: none;"><i class="fa fa-times"></i></a><span class="red-ui-searchBox-resultCount hide"></span></div></div><div class="red-ui-search-results-container"><div class="red-ui-editableList" style="top: 5px; left: 5px; bottom: 5px; right: 5px; position: absolute;"><div class="red-ui-editableList-container" style="top: 0px; left: 0px; bottom: 0px; right: 0px; position: absolute; overflow-y: scroll;"><ol id="search-result-list" style="position: static; top: auto; bottom: auto; left: auto; right: auto; height: auto;" class="red-ui-editableList-list"></ol></div></div></div></div></div>
+        <!--end 21-06-17-->
+        <div id="red-ui-search" class="red-ui-search" style="display: none;"><div class="red-ui-search-container"><div class="red-ui-searchBox-container"><i class="fa fa-search"></i><input type="text" placeholder="search your flows"><a href="#" style="display: none;"><i class="fa fa-times"></i></a><span class="red-ui-searchBox-resultCount hide"></span></div></div><div class="red-ui-search-results-container"><div class="red-ui-editableList" style="top: 5px; left: 5px; bottom: 5px; right: 5px; position: absolute;"><div class="red-ui-editableList-container" style="top: 0px; left: 0px; bottom: 0px; right: 0px; position: absolute; overflow-y: scroll;"><ol id="search-result-list" style="position: static; top: auto; bottom: auto; left: auto; right: auto; height: auto;" class="red-ui-editableList-list"></ol></div></div></div></div></div>
 
-<div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable" tabindex="-1" role="dialog" aria-describedby="library-dialog" aria-labelledby="ui-id-2" style="display: none;">
-    <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-2" class="ui-dialog-title">Export nodes to library</span>
-        <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
-            <span class="ui-button-text">close</span></button></div>
-    <div id="library-dialog" class="hide ui-dialog-content ui-widget-content" style="display: block;">
-        <form class="dialog-form form-horizontal">
-            <div class="form-row">
-                <label for="node-input-library-filename" data-i18n="[append]editor:library.filename"><i class="fa fa-file"></i> Filename</label>
-                <input type="text" id="node-input-library-filename" data-i18n="[placeholder]editor:library.fullFilenamePlaceholder" placeholder="a/b/file">
-                <input type="text" style="display: none;"></div></form></div>
-    <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
-        <div class="ui-dialog-buttonset">
-            <button type="button" id="library-dialog-cancel" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                <span class="ui-button-text">Cancel</span></button>
-            <button type="button" id="library-dialog-ok" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
-                <span class="ui-button-text">Export</span></button></div></div></div>
-<!--teil2 end-->
-<!-- new insert start-->
-<!--<div id="palette-container-BIBA" class="palette-category palette-close hide palette-open" style="display: block;"><div id="palette-header-BIBA" class="palette-header"><i class="fa fa-angle-down expanded"></i><span>BIBA</span></div><div class="palette-content" id="palette-base-category-BIBA" style="display: block;"><div id="palette-BIBA-input"></div><div id="palette-BIBA-output"></div><div id="palette-BIBA-function"></div><div id="palette-BIBA"><div id="palette_node_CSharplib" class="palette_node ui-draggable" style="background-color: rgb(255, 204, 102); height: 28px;"><div class="palette_label" dir="">CSharplib</div><div class="palette_icon_container"><div class="palette_icon" style="background-image: url(icons/debug.png)"></div></div><div class="palette_port palette_port_output" style="top: 9px;"></div></div><div id="palette_node_Csharpweibullalg" class="palette_node ui-draggable" style="background-color: rgb(255, 170, 170); height: 28px;"><div class="palette_label" dir="">Csharpweibullalg</div><div class="palette_icon_container"><div class="palette_icon" style="background-image: url(icons/inject.png)"></div></div><div class="palette_port palette_port_output" style="top: 9px;"></div><div class="palette_port palette_port_input" style="top: 9px;"></div></div>
-    <div id="palette_node_JSON2doublematrix" class="palette_node ui-draggable" style="background-color: rgb(255, 170, 170); height: 28px;"><div class="palette_label" dir="">JSON2doublematrix</div><div class="palette_icon_container"><div class="palette_icon" style="background-image: url(icons/inject.png)"></div></div><div class="palette_port palette_port_output" style="top: 9px;"></div><div class="palette_port palette_port_input" style="top: 9px;"></div></div></div></div></div>-->
+    <div class="ui-dialog ui-widget ui-widget-content ui-corner-all ui-front ui-dialog-buttons ui-draggable" tabindex="-1" role="dialog" aria-describedby="library-dialog" aria-labelledby="ui-id-2" style="display: none;">
+        <div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix"><span id="ui-id-2" class="ui-dialog-title">Export nodes to library</span>
+            <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-icon-only ui-dialog-titlebar-close" role="button" aria-disabled="false" title="close"><span class="ui-button-icon-primary ui-icon ui-icon-closethick"></span>
+                <span class="ui-button-text">close</span></button></div>
+        <div id="library-dialog" class="hide ui-dialog-content ui-widget-content" style="display: block;">
+            <form class="dialog-form form-horizontal">
+                <div class="form-row">
+                    <label for="node-input-library-filename" data-i18n="[append]editor:library.filename"><i class="fa fa-file"></i> Filename</label>
+                    <input type="text" id="node-input-library-filename" data-i18n="[placeholder]editor:library.fullFilenamePlaceholder" placeholder="a/b/file">
+                    <input type="text" style="display: none;"></div></form></div>
+        <div class="ui-dialog-buttonpane ui-widget-content ui-helper-clearfix">
+            <div class="ui-dialog-buttonset">
+                <button type="button" id="library-dialog-cancel" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                    <span class="ui-button-text">Cancel</span></button>
+                <button type="button" id="library-dialog-ok" class="primary ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+                    <span class="ui-button-text">Export</span></button></div></div></div>
+    <!--teil2 end-->
+    <!-- new insert start-->
+    <!--<div id="palette-container-BIBA" class="palette-category palette-close hide palette-open" style="display: block;"><div id="palette-header-BIBA" class="palette-header"><i class="fa fa-angle-down expanded"></i><span>BIBA</span></div><div class="palette-content" id="palette-base-category-BIBA" style="display: block;"><div id="palette-BIBA-input"></div><div id="palette-BIBA-output"></div><div id="palette-BIBA-function"></div><div id="palette-BIBA"><div id="palette_node_CSharplib" class="palette_node ui-draggable" style="background-color: rgb(255, 204, 102); height: 28px;"><div class="palette_label" dir="">CSharplib</div><div class="palette_icon_container"><div class="palette_icon" style="background-image: url(icons/debug.png)"></div></div><div class="palette_port palette_port_output" style="top: 9px;"></div></div><div id="palette_node_Csharpweibullalg" class="palette_node ui-draggable" style="background-color: rgb(255, 170, 170); height: 28px;"><div class="palette_label" dir="">Csharpweibullalg</div><div class="palette_icon_container"><div class="palette_icon" style="background-image: url(icons/inject.png)"></div></div><div class="palette_port palette_port_output" style="top: 9px;"></div><div class="palette_port palette_port_input" style="top: 9px;"></div></div>
+        <div id="palette_node_JSON2doublematrix" class="palette_node ui-draggable" style="background-color: rgb(255, 170, 170); height: 28px;"><div class="palette_label" dir="">JSON2doublematrix</div><div class="palette_icon_container"><div class="palette_icon" style="background-image: url(icons/inject.png)"></div></div><div class="palette_port palette_port_output" style="top: 9px;"></div><div class="palette_port palette_port_input" style="top: 9px;"></div></div></div></div></div>-->
 
-<!-- new insert end-->
+    <!-- new insert end-->
 
 
 </body>
