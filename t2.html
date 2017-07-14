@@ -86,10 +86,26 @@
 //                var screenSize = [$("#chart").width(),$("#chart").height()],
                 accept: ".palette_node",
                 attr: "id",
-               // append:  "svg:path",
+               append:  'svg:path',
                 drop: function (event, ui) {
 
                     d3.event=event;
+                    //
+                    var idb =(1+Math.random()*4294967295).toString(16);
+                    var outer = d3.select("#chart>svg")
+
+                        .append("g:g")
+
+                        .attr("id", idb)
+
+                        .attr("class", "node nodegroup");
+
+                    var vis = outer
+
+                        .append("rect").attr("class","port").attr("rx",3).attr("ry",3).attr("width",10).attr("height",10).attr("x",-5).attr("y",15);
+
+
+                    //
                     var se_tl=ui.draggable[0].type;
                     var recipient = addNode(se_tl);
                     if(!recipient) {
@@ -219,16 +235,56 @@
         $(function(){
             var space_width = 5000,
             space_height = 5000;
+            var coordinates = [0, 0];
+
+            var x = coordinates[0];
+            var y = coordinates[1];
+             var idan =(1+Math.random()*4294967295).toString(16);
 
             var outer = d3.selectAll('div.ui-draggable.ui-draggable.ui-draggable')
                           .append("g:g")
-                .attr("width", space_width)
-                .attr("height", space_height)
-                .attr("pointer-events", "all")
-                .style("cursor","crosshair")
-                .attr("transform","translate(3,"+(30+3)+")")
-            ;
+                         .attr("id",idan)
+                         .attr("class", "node nodeGroup");
+                        //.attr("transform", "translate(" + x+","+y+ ")" );
+                       // .attr("transform", function(d) { return "translate(" + x+","+y+ ")" });
         });
+
+        $(function(){
+
+           var b = d3.selectAll('div.ui-draggable.ui-draggable.ui-draggable').append("rect>g").attr("class","port").attr("rx",3).attr("ry",3).attr("width",10).attr("height",10).attr("x",-5).attr("y",15)
+            var c=  d3.selectAll('div.ui-draggable.ui-draggable.ui-draggable').append("image").attr("class","node_error hidden").attr("xlink:href","icons/node-error.png").attr("x",0).attr("y",-6).attr("width",10).attr("height",9);
+            var t =  d3.selectAll('div.ui-draggable.ui-draggable.ui-draggable')
+                .append("image").attr("class","node_changed hidden")
+                .attr("xlink:href","icons/node-changed.png")
+                .attr("x",12).attr("y",-6).attr("width",10).attr("height",10);
+        });
+
+        $(function(){
+
+            d3.selectAll('div.ui-draggable.ui-draggable.ui-draggable').on("mousedown", function() {
+                var div = d3.select(this)
+                    .classed("active", true);
+
+                var w = d3.select(window)
+                    .on("mousemove", mousemove)
+                    .on("mouseup", mouseup);
+
+                d3.event.preventDefault();
+
+                function mousemove() {
+                    div.attr("transform","translate("+d3.mouse(div.node())+ ")");
+                }
+
+                function mouseup() {
+                    div.classed("active", false);
+                    w.on("mousemove", null).on("mouseup", null);
+                }
+
+
+            });
+        });
+
+
         $(function(){
             var space_width = 5000,
                 space_height = 5000;
@@ -238,8 +294,11 @@
 //                .append("rect").attr("class","port").attr("rx",3).attr("ry",3).attr("width",10).attr("height",10)
             ;
         });
-        $(
-            function portMouseDown(d,portType,portIndex) {
+
+
+
+
+        $(function portMouseDown(d,portType,portIndex) {
                 mousedown_node = d;
                 mousedown_port_type = portType;
                 mousedown_port_index = portIndex || 0;
@@ -292,50 +351,26 @@
             redraw();
         });
 
+        $( function() {
+            $("#chart").on("DOMMouseScroll mousewheel", function (evt) {
+                if ( evt.altKey ) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    var move = -(evt.originalEvent.detail) || evt.originalEvent.wheelDelta;
+                    if (move <= 0) { zoomOut(); }
+                    else { zoomIn(); }
+                }
+            })
+                    .on("dragenter",function(event) {
+                if ($.inArray("text/plain",event.originalEvent.dataTransfer.types) != -1) {
+                    $("#dropTarget").css({display:'table'});
+                    RED.keyboard.add("*", "escape" ,hideDropTarget);
+                }
+            });
+        });
 
-        //$(function(){
-            //var outer = d3.select("#chart")
-            //    .append("svg:svg")
-            //    .attr("width", space_width)
-            //    .attr("height", space_height)
-            //    .attr("pointer-events", "all")
-             //   .style("cursor","crosshair")
-             //   .on("mousedown", function() {
 
-             //   });
-           // var vis = outer
-           //     .append("svg:g")
-           //     .on("dblclick.zoom", null)
-            //    .append("svg:g");
-            //var outer_background = vis.append("svg:rect")
-            //    .attr("width", space_width)
-            //    .attr("height", space_height)
-            //    .attr("fill","#fff");
-            //var scaleFactor = 1;
-            //var mousedown_node=null;
-            //var d_x=40,
-            //    d_y=40;
-            //var gridSize = 20;
-            //var node_width = 100,
-           //     node_height = 30;
-           // var ow = d.w;
-            //d.w = Math.max(node_width,gridSize*(Math.ceil((calculateTextWidth(l, "palatte_label", 50)+(d._def.inputs>0?7:0))/gridSize)) );
-            //d.h = Math.max(node_height,(d.outputs||0) * 15);
-            //d.x += (d.w-ow)/2;
-            //d.resize = false;
 
-            //var space_width=5000,
-            //    space_height=5000;
-          // $(' div.ui-draggable.ui-draggable.ui-draggable').mousedown(function () {
-             //   //$('div.ui-draggable.ui-draggable.ui-draggable').attr("transform","translate("+(d.x-20)+","+(d.x-20)+")").attr("width", space_width)
-             //  $('div.ui-draggable.ui-draggable.ui-draggable').append("svg:svg").attr("transform","scale("+20+","+20+")").attr("width", space_width)
-             //       .attr("height", space_height)
-             //       .attr("pointer-events", "all")
-             //       .style("cursor","crosshair");
-             //  vis.append("svg:rect").addClass("node node_selected");
-           //});
-
-       // });
        $(function calculateTextWidth(str, className, offset) {
             var sp = document.createElement("span");
             sp.className = className;
@@ -444,337 +479,20 @@
         <div id="chart" tabindex="1" class="ui-droppable" style="...">
             <canvas id="c" width="5000" height="5000" style="..."></canvas>
             <svg width="5000" height="5000" pointer-events="all" style="cursor: crosshair;">
-                <g><g transform="scale(1)"><rect width="5000" height="5000" fill="#fff"></rect>
-                    <g style="visibility: hidden;"><line class="horizontal" x1="0" x2="5000" y1="0" y2="0" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="20" y2="20" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="40" y2="40" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="60" y2="60" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="80" y2="80" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="100" y2="100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="120" y2="120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="140" y2="140" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="160" y2="160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="180.00000000000003" y2="180.00000000000003" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="200" y2="200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="220.00000000000003" y2="220.00000000000003" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="240" y2="240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="260" y2="260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="280" y2="280" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="300" y2="300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="320" y2="320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="340" y2="340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="360.00000000000006" y2="360.00000000000006" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="380" y2="380" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="400" y2="400" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="420" y2="420" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="440.00000000000006" y2="440.00000000000006" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="460" y2="460" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="480" y2="480" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="500" y2="500" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="520" y2="520" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="540" y2="540" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="560" y2="560" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="580" y2="580" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="600" y2="600" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="620" y2="620" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="640" y2="640" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="660" y2="660" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="680" y2="680" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="700.0000000000001" y2="700.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="720.0000000000001" y2="720.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="740.0000000000001" y2="740.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="760" y2="760" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="780" y2="780" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="800" y2="800" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="820" y2="820" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="840" y2="840" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="860.0000000000001" y2="860.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="880.0000000000001" y2="880.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="900.0000000000001" y2="900.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="920" y2="920" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="940" y2="940" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="960" y2="960" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="980" y2="980" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1000" y2="1000" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1020.0000000000001" y2="1020.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1040" y2="1040" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1060" y2="1060" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1080" y2="1080" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1100" y2="1100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1120" y2="1120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1140" y2="1140" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1160" y2="1160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1180" y2="1180" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1200" y2="1200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1220" y2="1220" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1240" y2="1240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1260" y2="1260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1280" y2="1280" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1300" y2="1300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1320" y2="1320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1340" y2="1340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1360" y2="1360" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1380.0000000000002" y2="1380.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1400.0000000000002" y2="1400.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1420.0000000000002" y2="1420.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1440.0000000000002" y2="1440.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1460.0000000000002" y2="1460.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1480.0000000000002" y2="1480.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1500" y2="1500" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1520" y2="1520" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1540" y2="1540" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1560" y2="1560" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1580" y2="1580" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1600" y2="1600" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1620" y2="1620" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1640" y2="1640" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1660" y2="1660" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1680" y2="1680" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1700.0000000000002" y2="1700.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1720.0000000000002" y2="1720.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1740.0000000000002" y2="1740.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1760.0000000000002" y2="1760.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1780.0000000000002" y2="1780.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1800.0000000000002" y2="1800.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1820" y2="1820" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1840" y2="1840" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1860" y2="1860" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1880" y2="1880" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1900" y2="1900" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1920" y2="1920" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1940" y2="1940" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1960" y2="1960" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="1980" y2="1980" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2000" y2="2000" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2020.0000000000002" y2="2020.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2040.0000000000002" y2="2040.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2060" y2="2060" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2080" y2="2080" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2100" y2="2100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2120" y2="2120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2140.0000000000005" y2="2140.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2160" y2="2160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2180" y2="2180" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2200" y2="2200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2220" y2="2220" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2240" y2="2240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2260" y2="2260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2280" y2="2280" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2300" y2="2300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2320" y2="2320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2340" y2="2340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2360" y2="2360" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2380" y2="2380" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2400" y2="2400" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2420" y2="2420" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2440" y2="2440" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2460.0000000000005" y2="2460.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2480" y2="2480" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2500" y2="2500" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2520" y2="2520" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2540" y2="2540" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2560" y2="2560" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2580" y2="2580" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2600" y2="2600" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2620" y2="2620" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2640" y2="2640" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2660" y2="2660" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2680" y2="2680" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2700" y2="2700" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2720" y2="2720" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2740" y2="2740" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2760.0000000000005" y2="2760.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2780.0000000000005" y2="2780.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2800.0000000000005" y2="2800.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2820.0000000000005" y2="2820.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2840.0000000000005" y2="2840.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2860.0000000000005" y2="2860.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2880.0000000000005" y2="2880.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2900.0000000000005" y2="2900.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2920.0000000000005" y2="2920.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2940.0000000000005" y2="2940.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2960.0000000000005" y2="2960.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="2980" y2="2980" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3000" y2="3000" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3020" y2="3020" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3040" y2="3040" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3060" y2="3060" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3080" y2="3080" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3100" y2="3100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3120" y2="3120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3140" y2="3140" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3160" y2="3160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3180" y2="3180" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3200" y2="3200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3220" y2="3220" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3240" y2="3240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3260" y2="3260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3280" y2="3280" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3300" y2="3300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3320" y2="3320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3340" y2="3340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3360" y2="3360" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3380" y2="3380" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3400.0000000000005" y2="3400.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3420.0000000000005" y2="3420.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3440.0000000000005" y2="3440.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3460.0000000000005" y2="3460.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3480.0000000000005" y2="3480.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3500.0000000000005" y2="3500.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3520.0000000000005" y2="3520.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3540.0000000000005" y2="3540.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3560.0000000000005" y2="3560.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3580.0000000000005" y2="3580.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3600.0000000000005" y2="3600.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3620.0000000000005" y2="3620.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3640" y2="3640" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3660" y2="3660" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3680" y2="3680" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3700" y2="3700" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3720" y2="3720" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3740" y2="3740" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3760" y2="3760" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3780" y2="3780" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3800" y2="3800" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3820" y2="3820" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3840" y2="3840" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3860" y2="3860" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3880" y2="3880" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3900" y2="3900" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3920" y2="3920" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3940" y2="3940" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3960" y2="3960" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="3980" y2="3980" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4000" y2="4000" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4020.0000000000005" y2="4020.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4040.0000000000005" y2="4040.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4060.0000000000005" y2="4060.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4080.0000000000005" y2="4080.0000000000005" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4100" y2="4100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4120" y2="4120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4140" y2="4140" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4160" y2="4160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4180" y2="4180" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4200" y2="4200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4220" y2="4220" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4240" y2="4240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4260" y2="4260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4280.000000000001" y2="4280.000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4300" y2="4300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4320" y2="4320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4340" y2="4340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4360" y2="4360" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4380" y2="4380" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4400" y2="4400" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4420" y2="4420" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4440" y2="4440" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4460" y2="4460" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4480" y2="4480" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4500" y2="4500" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4520" y2="4520" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4540" y2="4540" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4560" y2="4560" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4580" y2="4580" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4600" y2="4600" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4620" y2="4620" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4640" y2="4640" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4660" y2="4660" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4680" y2="4680" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4700" y2="4700" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4720" y2="4720" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4740" y2="4740" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4760" y2="4760" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4780" y2="4780" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4800" y2="4800" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4820" y2="4820" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4840" y2="4840" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4860" y2="4860" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4880" y2="4880" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4900.000000000001" y2="4900.000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4920.000000000001" y2="4920.000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4940.000000000001" y2="4940.000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4960" y2="4960" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="4980" y2="4980" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="horizontal" x1="0" x2="5000" y1="5000" y2="5000" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="0" x2="0" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="20" x2="20" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="40" x2="40" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="60" x2="60" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="80" x2="80" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="100" x2="100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="120" x2="120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="140" x2="140" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="160" x2="160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="180.00000000000003" x2="180.00000000000003" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="200" x2="200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="220.00000000000003" x2="220.00000000000003" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="240" x2="240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="260" x2="260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="280" x2="280" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="300" x2="300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="320" x2="320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="340" x2="340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="360.00000000000006" x2="360.00000000000006" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="380" x2="380" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="400" x2="400" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="420" x2="420" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="440.00000000000006" x2="440.00000000000006" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="460" x2="460" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="480" x2="480" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="500" x2="500" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="520" x2="520" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="540" x2="540" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="560" x2="560" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="580" x2="580" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="600" x2="600" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="620" x2="620" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="640" x2="640" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="660" x2="660" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="680" x2="680" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="700.0000000000001" x2="700.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="720.0000000000001" x2="720.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="740.0000000000001" x2="740.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="760" x2="760" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="780" x2="780" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="800" x2="800" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="820" x2="820" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="840" x2="840" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="860.0000000000001" x2="860.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="880.0000000000001" x2="880.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="900.0000000000001" x2="900.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="920" x2="920" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="940" x2="940" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="960" x2="960" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="980" x2="980" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1000" x2="1000" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1020.0000000000001" x2="1020.0000000000001" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1040" x2="1040" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1060" x2="1060" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1080" x2="1080" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1100" x2="1100" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1120" x2="1120" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1140" x2="1140" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1160" x2="1160" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1180" x2="1180" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1200" x2="1200" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1220" x2="1220" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1240" x2="1240" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1260" x2="1260" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1280" x2="1280" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1300" x2="1300" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1320" x2="1320" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1340" x2="1340" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1360" x2="1360" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1380.0000000000002" x2="1380.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1400.0000000000002" x2="1400.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1420.0000000000002" x2="1420.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1440.0000000000002" x2="1440.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1460.0000000000002" x2="1460.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1480.0000000000002" x2="1480.0000000000002" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1500" x2="1500" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1520" x2="1520" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1540" x2="1540" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
-                        <line class="vertical" y1="0" y2="5000" x1="1560" x2="1560" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line></g><g></g>
+                <g>
+                    <g transform="scale(1)">
+                    <rect width="5000" height="5000" fill="#fff"></rect>
+                    <g style="visibility: hidden;">
+                        <line class="horizontal" x1="0" x2="5000" y1="0" y2="0" fill="none" shape-rendering="crispEdges" stroke="#eee" stroke-width="1px"></line>
+
+
+
+
+
+                    </g>
+                        <g></g>
+
+
                 </g></g></svg></div>
         <div id="workspace-toolbar" style="display: none;"></div>
         <div id="workspace-footer">
@@ -1189,7 +907,7 @@
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
-</script>
+        </script>
         <script type="text/x-red" data-help-name="JSON2doublematrix">
     <p>The function of this node is to convert the JSON to a matrix of data type double.</p>
 </script>
