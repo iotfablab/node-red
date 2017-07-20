@@ -92,22 +92,64 @@
                     d3.event=event;
                     //
                     var idb =(1+Math.random()*4294967295).toString(16);
-                    var outer = d3.select("#chart>svg")
+
+                    var helperOffset = d3.touches(ui.helper.get(0))[0]||d3.mouse(ui.helper.get(0));
+                    var mousePos = d3.touches(this)[0]||d3.mouse(this);
+
+                    var scaleFactor =1;
+
+                    mousePos[1] += this.scrollTop  +helperOffset[1];
+                    mousePos[0] += this.scrollLeft + helperOffset[0];
+                    mousePos[1] /= scaleFactor;
+                    mousePos[0] /= scaleFactor;
+
+                    var outer = d3.select("#chart>svg>g>g")
 
                         .append("g:g")
 
                         .attr("id", idb)
 
-                        .attr("class", "node nodegroup");
+                        .attr("class", "node nodegroup")
+                        .attr("transform","translate("+mousePos+")");
 
                     var vis = outer
 
                         .append("rect").attr("class","port").attr("rx",3).attr("ry",3).attr("width",10).attr("height",10).attr("x",-5).attr("y",15);
-
+                    //st_a
+                    var vis2 = outer
+                        .append("g")
+                        .attr("class", "node_icon_group")
+                        .attr("x",0).attr("y",0)
+                        .style ("pointer-events"," none");
+                    var vis3=vis2
+                        .append("rect")
+                        .attr("class","node_icon_shade")
+                        .attr("x",0).attr("y",0)
+                        .attr("width",30)
+                        .attr("stroke","none")
+                        .attr("fill","#000")
+                        .attr("fill-opacity","0.05")
+                        .attr("height", Math.min(50,30));
+                    var vis4 =vis3
+                        .append("image")
+                        //.attr("xlink:href","public/icons/"+ image.png)
+                        .attr("xlink:href","public/icons/inject.png")
+                        .attr("class","node_icon")
+                        .attr("x",0)
+                        .attr("width","30")
+                        .attr("height","30");
+                    var vis5 =vis4
+                        .append("path")
+                        .attr("class","node_icon_shade_border")
+                        .attr("stroke-opacity","0.1")
+                        .attr("stroke","#000")
+                        .attr("stroke-width","1");
+                    //end st_n
 
                     //
                     var se_tl=ui.draggable[0].type;
                     var recipient = addNode(se_tl);
+
                     if(!recipient) {
                         return;
                     }
@@ -136,6 +178,19 @@
 
                     var ida=( 1+math.random()*4294967295).toString(16);
                     //node.enter().insert("svg:g").attr("class", "node nodegroup");
+
+
+                    //.attr("x",-5).attr("y",15);
+
+                    //var spliceLink = $(ui.helper).data("splice");
+
+                    // var outer_background = vis.append("svg:rect")
+                    //     .attr("width",32)
+                    //     .attr("height", space_height);
+                    //.attr("fill",node_def);
+
+                    var text = outer.append("svg:text").attr("class","node_label").attr("x", 38).attr("dy", ".35em").attr("text-anchor","start");
+                    //ende_f
 
                     var spliceLink = $(ui.helper).data("splice");
                     nodes.add(newnd);
@@ -332,14 +387,16 @@
         });
 
 
-        $(function zoomIn() {
+        $("#btn-zoom-in.workspace-footer-button").on("click",function zoomIn() {
+            var scaleFactor =0;
             if (scaleFactor < 2) {
                 scaleFactor += 0.1;
                 redraw();
             }
         });
 
-        $(function zoomOut() {
+        $("#btn-zoom-out.workspace-footer-button").on("click",function zoomOut() {
+            var scaleFactor=0;
             if (scaleFactor > 0.3) {
                 scaleFactor -= 0.1;
                 redraw();
